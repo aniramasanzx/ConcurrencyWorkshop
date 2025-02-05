@@ -31,7 +31,7 @@ func TestWaitGroupWithoutDefer(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		finishedFunc()
-		wg.Done()
+		defer wg.Done()
 	}()
 
 	wg.Wait()
@@ -47,16 +47,20 @@ func TestErrGroupWithoutWithContext(t *testing.T) {
 	ctx := context.Background()
 	group := errgroup.Group{}
 
-	group.Go(func() error {
-		return expectedErr
-	})
+	group.Go(
+		func() error {
+			return expectedErr
+		},
+	)
 
-	group.Go(func() error {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	})
+	group.Go(
+		func() error {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		},
+	)
 
 	if err := group.Wait(); err != nil {
 		require.ErrorIs(t, err, expectedErr)
